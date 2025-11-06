@@ -1,7 +1,7 @@
 {
   "name": "app-wrap-station",
   "version": "1.0.0",
-  "description": "Unified React Frontend and Node.js Backend for Inspection App",
+  "description": "Aplikasi untuk pendaftaran inspeksi kendaraan Menggunakan React untuk Frontend and Node.js untuk Backend",
   "main": "server.js",
   "scripts": {
     "start": "concurrently \"npm run server\" \"npm run client\"",

@@ -1,9 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Car, FileText, CheckSquare, Clock, X, Trash2, Camera, Download, Loader2 } from 'lucide-react'; 
 
-// Konfigurasi API Endpoint (Asumsi API untuk Generate PDF berjalan di port 4000)
-// CATATAN PENTING: Anda harus memiliki backend yang berjalan di port ini yang dapat menerima JSON 
-// (termasuk Base64 data gambar dan tanda tangan) dan mengembalikan file PDF.
 const API_URL = "http://localhost:4000/api/generate-pdf";
 
 // Skema data inspeksi default
@@ -17,7 +14,7 @@ const defaultInspectionSchema = {
   Wheels: { status: 'G', notes: '', file: null },
 };
 
-// Component Input Group yang diperbarui: Lokasi sekarang bisa diedit (readOnly=false)
+// Component Input Data Customer
 const InputGroup = React.memo(({ label, value, name, onChange, required = false }) => (
     <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -27,7 +24,6 @@ const InputGroup = React.memo(({ label, value, name, onChange, required = false 
             type="text"
             name={name}
             value={value}
-            // onChange sudah cukup untuk memastikan input berjalan normal tanpa masalah "klik per kata"
             onChange={onChange}
             className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none 
                 border-gray-300 focus:ring-indigo-500 focus:border-indigo-500
@@ -42,16 +38,14 @@ const SignaturePad = ({ signature, setSignature }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  // Menggunakan useCallback untuk event handler untuk stabilitas React
   const startDrawing = useCallback((e) => {
-    e.preventDefault(); // Mencegah scrolling/default touch action
+    e.preventDefault(); 
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
     
-    // Penanganan koordinat yang seragam untuk mouse dan touch
     const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
     const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
     
@@ -64,7 +58,7 @@ const SignaturePad = ({ signature, setSignature }) => {
 
   const draw = useCallback((e) => {
     if (!isDrawing) return;
-    e.preventDefault(); // Mencegah scrolling/default touch action
+    e.preventDefault();
     
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -133,7 +127,7 @@ const SignaturePad = ({ signature, setSignature }) => {
     // MOUSE EVENTS
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
-    window.addEventListener('mouseup', stopDrawing); // Listener di window untuk mencegah putus saat mouse keluar canvas
+    window.addEventListener('mouseup', stopDrawing); 
     
     // TOUCH EVENTS (Passive: false untuk mencegah default action seperti scrolling)
     canvas.addEventListener('touchstart', startDrawing, { passive: false });
@@ -182,8 +176,8 @@ const SignaturePad = ({ signature, setSignature }) => {
 
 // Component Item Inspeksi
 const InspectionItem = React.memo(({ item, details, onUpdate }) => {
-  // Gunakan state lokal untuk mengontrol tampilan Note/Catatan
-  const [showNotes, setShowNotes] = useState(!!details.notes || !!details.file); // Tampilkan jika sudah ada isinya
+  
+  const [showNotes, setShowNotes] = useState(!!details.notes || !!details.file);
   const fileInputRef = useRef(null);
 
   const handleStatusChange = (newStatus) => {
@@ -365,7 +359,7 @@ const usePDF = ({ apiUrl }) => {
     const downloadPDF = useCallback(async (data) => {
         try {
             console.log("Mengirim data inspeksi ke backend...");
-            // Logika retri (Exponential Backoff) untuk koneksi yang tidak stabil
+            
             const MAX_RETRIES = 3;
             let response;
             
@@ -375,21 +369,17 @@ const usePDF = ({ apiUrl }) => {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            // Menambahkan header untuk memberi tahu backend tentang batasan ukuran file
-                            // Catatan: Header ini hanya bersifat informasi dan harus diimplementasikan
-                            // di backend Anda (misalnya, di Nginx atau Express body-parser limit).
                             'X-Max-Payload-Size': '5MB' 
                         },
                         body: JSON.stringify(data),
                     });
                     
                     if (response.ok) {
-                        break; // Sukses, keluar dari loop retry
+                        break; 
                     } else if (response.status === 413) {
                          // Payload Too Large
                          throw new Error(`Ukuran data terlalu besar. Harap periksa ukuran file gambar Anda.`);
                     } else if (i === MAX_RETRIES - 1) {
-                         // Setelah percobaan terakhir, jika masih gagal
                          const errorText = await response.text();
                          throw new Error(`Server error (${response.status}): ${errorText.substring(0, 100)}...`);
                     }
@@ -399,8 +389,7 @@ const usePDF = ({ apiUrl }) => {
                         throw error; // Melemparkan error ukuran file atau error terakhir
                     }
                     console.error(`Attempt ${i+1} failed:`, error.message);
-                    // Tunggu sebelum percobaan berikutnya
-                    const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+                    const delay = Math.pow(2, i) * 1000;
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
@@ -426,13 +415,13 @@ const usePDF = ({ apiUrl }) => {
             a.href = url;
             a.download = filename;
             
-            // Pemicu download
+            // download pdf
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             
             console.log(`PDF berhasil diunduh: ${filename}`);
-            return filename; // Kembalikan nama file jika diperlukan
+            return filename; 
             
         } catch (error) {
             console.error("Error dalam proses download PDF:", error);
@@ -455,7 +444,7 @@ const Dashboard = () => {
   const [formData, setFormData] = useState(() => ({
     date: new Date().toISOString(),
     customer: {
-      location: 'Wrap Station Medan', // Dapat diubah
+      location: '', 
       firstName: '',
       lastName: '',
       phone: '',
@@ -503,7 +492,6 @@ const Dashboard = () => {
 
   const isStep1Valid = () => {
     const cust = formData.customer;
-    // Pengecekan sederhana bahwa field wajib tidak kosong
     return cust.firstName && cust.lastName && cust.phone && cust.carBrand && cust.carModel && cust.licensePlate && cust.location;
   };
 
