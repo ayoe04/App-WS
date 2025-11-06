@@ -1,7 +1,9 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Car, FileText, CheckSquare, Clock, X, Trash2, Camera, Download, Loader2 } from 'lucide-react'; 
 
-const API_URL = "http://localhost:4000/api/generate-pdf";
+// PERUBAHAN 1: Mengubah URL ABSOLUT menjadi RELATIF. 
+// Vercel akan otomatis mengarahkan /api/generate-pdf ke server.js Anda.
+const API_URL = "/api/generate-pdf";
 
 // Skema data inspeksi default
 const defaultInspectionSchema = {
@@ -175,7 +177,7 @@ const SignaturePad = ({ signature, setSignature }) => {
 
 
 // Component Item Inspeksi
-const InspectionItem = React.memo(({ item, details, onUpdate }) => {
+const InspectionItem = React.memo(({ item, details, onUpdate, onError }) => { // Tambahkan onError
   
   const [showNotes, setShowNotes] = useState(!!details.notes || !!details.file);
   const fileInputRef = useRef(null);
@@ -192,7 +194,8 @@ const InspectionItem = React.memo(({ item, details, onUpdate }) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
-         alert("Ukuran file terlalu besar. Maksimal 5MB.");
+         // PERUBAHAN 2: Ganti alert() dengan pemanggilan onError (Modal)
+         onError("Ukuran file terlalu besar. Maksimal 5MB.");
          e.target.value = null; // Reset input
          onUpdate(item, { ...details, file: null });
          return;
@@ -358,13 +361,14 @@ const usePDF = ({ apiUrl }) => {
     // Fungsi untuk mengunduh PDF
     const downloadPDF = useCallback(async (data) => {
         try {
-            console.log("Mengirim data inspeksi ke backend...");
+            console.log("Mengirim data inspeksi ke backend di jalur:", apiUrl);
             
             const MAX_RETRIES = 3;
             let response;
             
             for (let i = 0; i < MAX_RETRIES; i++) {
                 try {
+                    // PENTING: apiUrl kini menggunakan jalur RELATIF (/api/generate-pdf)
                     response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: {
@@ -380,6 +384,7 @@ const usePDF = ({ apiUrl }) => {
                          // Payload Too Large
                          throw new Error(`Ukuran data terlalu besar. Harap periksa ukuran file gambar Anda.`);
                     } else if (i === MAX_RETRIES - 1) {
+                         // Tampilkan pesan error dari server jika ada
                          const errorText = await response.text();
                          throw new Error(`Server error (${response.status}): ${errorText.substring(0, 100)}...`);
                     }
@@ -389,6 +394,7 @@ const usePDF = ({ apiUrl }) => {
                         throw error; // Melemparkan error ukuran file atau error terakhir
                     }
                     console.error(`Attempt ${i+1} failed:`, error.message);
+                    // Exponential backoff
                     const delay = Math.pow(2, i) * 1000;
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
@@ -482,6 +488,13 @@ const Dashboard = () => {
     }));
   }, []);
 
+  // Fungsi yang dipanggil oleh InspectionItem saat ada error (misal file size)
+  const handleInspectionError = (message) => {
+    setModalMessage(message);
+    setModalType('error');
+    setShowModal(true);
+  };
+
   const handleSignatureChange = useCallback((dataUrl) => {
     setFormData(prev => ({ ...prev, signature: dataUrl }));
   }, []);
@@ -510,7 +523,7 @@ const Dashboard = () => {
   };
 
   const handlePrev = () => {
-    setActiveStep(prev => prev - 1);
+    activeStep > 1 && setActiveStep(prev => prev - 1);
   };
 
   const handleSubmit = async () => {
@@ -630,6 +643,7 @@ const Dashboard = () => {
                                 item={item} 
                                 details={formData.inspection[item]} 
                                 onUpdate={handleInspectionUpdate}
+                                onError={handleInspectionError} // Teruskan fungsi error handler
                             />
                         ))}
                     </div>
