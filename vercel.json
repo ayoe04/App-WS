@@ -1,0 +1,33 @@
+{
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "startCommand": "npm run build"
+      }
+    },
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  
+  "routes": [
+    {
+      "src": "/generate-pdf",
+      "dest": "server.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "build/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}

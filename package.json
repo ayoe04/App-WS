@@ -1,27 +1,30 @@
 {
   "name": "app-wrap-station",
   "version": "1.0.0",
-  "description": "Aplikasi untuk pendaftaran inspeksi kendaraan Menggunakan React untuk Frontend and Node.js untuk Backend",
+  "description": "Wrap Station Application Dashboard",
   "main": "server.js",
   "scripts": {
-    "start": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "node server.js",
+    "start": "concurrently \"npm run client\" \"npm run server\"",
     "client": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "server": "node server.js",
+    "build": "react-scripts build"
   },
+  "keywords": [
+    "react",
+    "express"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
-    "lucide-react": "^0.552.0",
     "pdfkit": "^0.13.0",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "concurrently": "^8.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "proxy": "http://localhost:4000",
   "browserslist": {
     "production": [
       ">0.2%",
