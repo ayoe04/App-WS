@@ -1,44 +1,90 @@
-// Import library
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const PDFDocument = require('pdfkit');
+const path = require('path');
 
-// Membuat instance Express
 const app = express();
 
-// Konfigurasi Middleware
+// Middleware
 app.use(cors());
-// Menggunakan body-parser untuk menangani data JSON yang dikirimkan dari frontend
 app.use(bodyParser.json({ limit: '50mb' }));
 
-// Rute untuk Generate PDF
-app.post('/generate-pdf', (req, res) => {
-    // Data dikirimkan dari React di frontend melalui req.body
-    const data = req.body; 
+// Serve static files from build folder (for production)
+app.use(express.static(path.join(__dirname, 'build')));
 
-    // Konfigurasi Header untuk response
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="Laporan_Inspeksi.pdf"');
+// PDF Generation Route - PERBAIKI INI
+app.post('/api/generate-pdf', (req, res) => {
+    try {
+        console.log('Received PDF generation request');
+        
+        const data = req.body;
+        
+        // Validasi data
+        if (!data || !data.customer) {
+            return res.status(400).json({ error: 'Data tidak valid' });
+        }
 
-    // Buat objek PDF baru
-    const doc = new PDFDocument({
-        size: 'A4',
-        margin: 50
-    });
-    
-    doc.pipe(res);
-    
-    doc.fontSize(20).text('Laporan Inspeksi Kendaraan', { align: 'center' });
-    doc.moveDown();
-    
-    doc.fontSize(12).text(`Lokasi: ${data.location || 'Tidak Tersedia'}`);
-    doc.text(`Nama Pelanggan: ${data.customerName || 'Tidak Tersedia'}`);
-    doc.text(`Merek Mobil: ${data.carBrand || 'Tidak Tersedia'}`);
-    doc.moveDown();
-    
-    doc.end();
+        // Setup response headers
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename="Laporan_Inspeksi.pdf"');
+
+        // Create PDF
+        const doc = new PDFDocument({
+            size: 'A4',
+            margin: 50
+        });
+        
+        // Pipe PDF to response
+        doc.pipe(res);
+        
+        // Add content to PDF
+        doc.fontSize(20).text('LAPORAN INSPEKSI KENDARAAN', { align: 'center' });
+        doc.moveDown();
+        
+        doc.fontSize(12)
+           .text(`Lokasi: ${data.customer.location || 'Tidak Tersedia'}`)
+           .text(`Nama: ${data.customer.firstName || ''} ${data.customer.lastName || ''}`)
+           .text(`Telepon: ${data.customer.phone || 'Tidak Tersedia'}`)
+           .text(`Mobil: ${data.customer.carBrand || ''} ${data.customer.carModel || ''}`)
+           .text(`Warna: ${data.customer.color || 'Tidak Tersedia'}`)
+           .text(`Plat: ${data.customer.licensePlate || 'Tidak Tersedia'}`);
+        
+        doc.moveDown();
+        
+        // Inspection results
+        doc.text('HASIL INSPEKSI:', { underline: true });
+        doc.moveDown(0.5);
+        
+        Object.entries(data.inspection || {}).forEach(([item, details]) => {
+            const status = details.status === 'G' ? 'BAIK' : 
+                          details.status === 'F' ? 'CUKUP' : 'BURUK';
+            
+            doc.text(`${item}: ${status}`);
+            
+            if (details.notes) {
+                doc.text(`   Catatan: ${details.notes}`, { indent: 20 });
+            }
+            
+            doc.moveDown(0.5);
+        });
+        
+        // Finalize PDF
+        doc.end();
+        
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).json({ 
+            error: 'Gagal generate PDF',
+            details: error.message 
+        });
+    }
 });
 
-// Konfigurasi Khusus Vercel
+// Handle all other routes by serving the React app
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
+// Export for Vercel
 module.exports = app;

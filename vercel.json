@@ -5,8 +5,7 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "startCommand": "npm run build",
-        "outputDirectory": "build"
+        "distDir": "build"
       }
     },
     {
@@ -16,24 +15,13 @@
   ],
   "routes": [
     {
-      "src": "/generate-pdf",
-      "dest": "server.js",
+      "src": "/api/generate-pdf",
+      "dest": "/server.js",
       "methods": ["POST"]
     },
     {
-      "src": "/api/(.*)",
-      "dest": "server.js"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/build/static/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/build/index.html"
+      "dest": "/build/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }

@@ -1,8 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Car, FileText, CheckSquare, Clock, X, Trash2, Camera, Download, Loader2 } from 'lucide-react'; 
 
-// PERUBAHAN 1: Mengubah URL ABSOLUT menjadi RELATIF. 
-// Vercel akan otomatis mengarahkan /api/generate-pdf ke server.js Anda.
 const API_URL = "/api/generate-pdf";
 
 // Skema data inspeksi default
@@ -177,7 +175,7 @@ const SignaturePad = ({ signature, setSignature }) => {
 
 
 // Component Item Inspeksi
-const InspectionItem = React.memo(({ item, details, onUpdate, onError }) => { // Tambahkan onError
+const InspectionItem = React.memo(({ item, details, onUpdate, onError }) => { 
   
   const [showNotes, setShowNotes] = useState(!!details.notes || !!details.file);
   const fileInputRef = useRef(null);
@@ -194,16 +192,14 @@ const InspectionItem = React.memo(({ item, details, onUpdate, onError }) => { //
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
-         // PERUBAHAN 2: Ganti alert() dengan pemanggilan onError (Modal)
          onError("Ukuran file terlalu besar. Maksimal 5MB.");
-         e.target.value = null; // Reset input
+         e.target.value = null; 
          onUpdate(item, { ...details, file: null });
          return;
       }
       
       const reader = new FileReader();
       reader.onloadend = () => {
-        // Simpan Data URL (Base64) dan nama file
         onUpdate(item, { 
           ...details, 
           file: {
@@ -211,7 +207,7 @@ const InspectionItem = React.memo(({ item, details, onUpdate, onError }) => { //
             dataUrl: reader.result 
           }
         });
-        setShowNotes(true); // Pastikan notes terbuka jika file diupload
+        setShowNotes(true); 
       };
       reader.onerror = () => {
          console.error("Gagal membaca file.");
@@ -488,7 +484,6 @@ const Dashboard = () => {
     }));
   }, []);
 
-  // Fungsi yang dipanggil oleh InspectionItem saat ada error (misal file size)
   const handleInspectionError = (message) => {
     setModalMessage(message);
     setModalType('error');
@@ -643,7 +638,7 @@ const Dashboard = () => {
                                 item={item} 
                                 details={formData.inspection[item]} 
                                 onUpdate={handleInspectionUpdate}
-                                onError={handleInspectionError} // Teruskan fungsi error handler
+                                onError={handleInspectionError}
                             />
                         ))}
                     </div>
