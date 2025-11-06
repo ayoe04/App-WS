@@ -12,3 +12,5 @@ Aplikasi ini masih awal, masih perlu penambahan dan perbaikan.
 1. Clone repository
 2. Jalankan `npm install`
 3. Jalankan `npm start`
+
+## Aplikasi sudah di deploy : https://app-ws.vercel.app/
