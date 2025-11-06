@@ -1,10 +1,12 @@
 {
+  "version": 2,
   "builds": [
     {
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "startCommand": "npm run build"
+        "startCommand": "npm run build",
+        "outputDirectory": "build"
       }
     },
     {
@@ -12,19 +14,23 @@
       "use": "@vercel/node"
     }
   ],
-  
   "routes": [
     {
       "src": "/generate-pdf",
-      "dest": "server.js"
+      "dest": "server.js",
+      "methods": ["POST"]
     },
     {
       "src": "/api/(.*)",
       "dest": "server.js"
     },
     {
+      "src": "/static/(.*)",
+      "dest": "/build/static/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "build/$1"
+      "dest": "/build/index.html"
     }
   ],
   "env": {
